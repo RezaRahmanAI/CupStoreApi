@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using OnlineShop.Data.Data;
 using OnlineShop.Model.Models;
 
+
 namespace OnlineShop.service.Interface.ProductRepository;
 
 public class ProductRepository(ApplicationDbContext dbContext) : IProductRepository
