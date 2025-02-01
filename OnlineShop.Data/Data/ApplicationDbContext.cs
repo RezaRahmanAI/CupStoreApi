@@ -2,11 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using OnlineShop.Model;
 using OnlineShop.Model.Models;
 
-namespace OnlineShop.Data
+namespace OnlineShop.Data.Data
 {
     public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
     {
-        public DbSet<Product> Products { get; set; }
+        public DbSet<Product?> Products { get; set; }
         
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

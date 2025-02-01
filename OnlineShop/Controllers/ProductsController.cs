@@ -1,60 +1,81 @@
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using OnlineShop.Data;
 using OnlineShop.Model.Models;
+using OnlineShop.service.Interface.GenericRipository;
+using OnlineShop.service.Interface.ProductRepository;
 
 namespace OnlineShop.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ProductsController : ControllerBase
+    public class ProductsController(IGenericInterface<Product> _product) : ControllerBase
     {
-        private readonly ApplicationDbContext _dbContext;
-        public ProductsController(ApplicationDbContext dbContext)
-        {
-            this._dbContext = dbContext;
-        }
-
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Product>>> GetAllProducts()
+        public async Task<ActionResult<IEnumerable<Product>>> GetAllProducts(string? brand, string? type)
         {
-            var products = await _dbContext.Products.ToListAsync();
+            var products = await _product.GetAll();
             return Ok(products);
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<Product>> GetProductById(int id)
         {
-            var product = await _dbContext.Products.FindAsync(id);   
+            var product = await _product.GetById(id);   
             if (product == null) return NotFound();         
             return Ok(product);
         }
 
         [HttpPost]
-        public ActionResult<Product> CreateProduct(Product product)
+        public async Task<IActionResult> CreateProduct(Product product)
         {
-            _dbContext.Products.Add(product);
-            _dbContext.SaveChanges();
-            return CreatedAtAction(nameof(GetProductById), new { id = product.Id }, product);
+            if (ModelState.IsValid)
+            {
+                _product.Add(product); 
+
+                if (await _product.Save())
+                {
+                    return CreatedAtAction("GetProductById", new { id = product.Id }, product);
+                }
+            }
+
+            return BadRequest(ModelState); 
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateProduct(int id, Product product)
         {
             if (id != product.Id) return BadRequest();
-            _dbContext.Entry(product).State = EntityState.Modified;
-            await _dbContext.SaveChangesAsync();
+            _product.Update(product);
+            await _product.Save();
             return NoContent();
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id){
-            var product = await _dbContext.Products.FindAsync(id);
+            var product = await _product.GetById(id);
             if (product == null) return NotFound();
-            _dbContext.Products.Remove(product);
-            await _dbContext.SaveChangesAsync();
+            
+            _product.Delete(product);
+            await _product.Save();
             return NoContent();
+        }
+
+        [HttpGet("brands")]
+        public async Task<ActionResult<IReadOnlyList<string>>> BrandListAsync()
+        {
+            //var products = await _product.GetBrandsAsync();
+            return Ok();
+        }
+
+        [HttpGet("types")]
+        public async Task<ActionResult<IReadOnlyList<string>>> TypeListAsync()
+        {
+            //var types = await _product.GetProductTypesAsync();
+            return Ok();
+        }
+
+        private bool ProductExists(int id)
+        {
+            return _product.IsExist(id);
         }
     }
 }
